@@ -30,6 +30,11 @@
 
 function options = bss_get_default_options (options, problem)
 
+% Verbose ?
+if (~ isfield (options, 'verbose')) || (isempty (options.verbose))
+    options.verbose = true;
+end
+
 % Default figure options
 if ~ isfield (options, 'figs')
     options.figs = [];

@@ -67,8 +67,10 @@ Pf_target = Pf_base * estim_ratio;
 bss_figure(21, options.figs, xt, [], [], [stage_data(1:stage-1).u_target], ...
     u_target, problem, stage, Pf_target);  drawnow;
 
-fprintf('>>>>> estim_ratio = %.5f\n', estim_ratio);
-fprintf('>>>>> Pf_target = %.5e\n', Pf_target);
+if options.verbose
+    fprintf('>>>>> estim_ratio = %.5f\n', estim_ratio);
+    fprintf('>>>>> Pf_target = %.5e\n', Pf_target);
+end
 
 % save stage results
 stage_data(stage).estim_ratio = estim_ratio;
@@ -92,9 +94,11 @@ bss_figure(21, options.figs, xt, [], [], [stage_data(1:stage-1).u_target], ...
 stage_data(stage).accept_rate = accept_rate;
 stage_data(stage).sig_RW = sig_RW;
 
-fprintf('>>>>> expected acceptance rates:  ');
-fprintf('%.2f%%  ', accept_rate.expected * 100); fprintf('\n');
-fprintf('>>>>> observed acceptance rates:  ');
-fprintf('%.2f%%  ', accept_rate.observed * 100); fprintf('\n');
+if options.verbose
+    fprintf('>>>>> expected acceptance rates:  ');
+    fprintf('%.2f%%  ', accept_rate.expected * 100); fprintf('\n');
+    fprintf('>>>>> observed acceptance rates:  ');
+    fprintf('%.2f%%  ', accept_rate.observed * 100); fprintf('\n');
+end
 
 end % function

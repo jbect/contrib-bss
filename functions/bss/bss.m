@@ -116,10 +116,12 @@ while ~ final_stage
     stage_data(stage).u_base = mcs.u_base;
     stage_data(stage).u_target = [];
 
-    fprintf('\n\n####################\n');
-    fprintf('##    stage %2d    ##\n', stage);
-    fprintf('####################\n\n');
-    fprintf('base threshold = %.3f\n\n', mcs.u_base);
+    if options.verbose
+        fprintf('\n\n####################\n');
+        fprintf('##    stage %2d    ##\n', stage);
+        fprintf('####################\n\n');
+        fprintf('base threshold = %.3f\n\n', mcs.u_base);
+    end
 
     if options.use_gp
 
@@ -185,7 +187,9 @@ stage_history.averagePMisclass    = [];
 
 % STEPWISE UNCERTAINTY REDUCTION %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-fprintf('[[stage %d, stepwise uncertainty reduction]]\n', stage);
+if options.verbose
+    fprintf('[[stage %d, stepwise uncertainty reduction]]\n', stage);
+end
 
 % Indices of all the points (in xt) selected during this stage
 idx_added = [];
@@ -207,7 +211,8 @@ while k < options.SUR.max_eval_per_stage
         % At the final stage, u_target = u_final.
         % Otherwise, u_target is a moving target !
         [u_target, g_next] = bss_select_next_threshold ...
-            (yp_sample, gx, options.p0, u_target, problem.u_final);
+            (yp_sample, gx, options.p0, u_target, problem.u_final, ...
+            options.verbose);
         final_stage = (u_target == problem.u_final);
 
     end
@@ -216,11 +221,15 @@ while k < options.SUR.max_eval_per_stage
     stage_history.u_final(end+1)  = problem.u_final;
 
     if final_stage
-        fprintf('>>> final stage !  ==>  ');
-        fprintf('u_target is now locked to u_final = %.3f.\n', u_target);
+        if options.verbose
+            fprintf('>>> final stage !  ==>  ');
+            fprintf('u_target is now locked to u_final = %.3f.\n', u_target);
+        end
     else
-        fprintf('>>> u_target = %.3f', u_target);
-        fprintf('  <  u_final = %.3f\n', problem.u_final);
+        if options.verbose
+            fprintf('>>> u_target = %.3f', u_target);
+            fprintf('  <  u_final = %.3f\n', problem.u_final);
+        end
         assert(u_target < problem.u_final);
     end
 
@@ -232,14 +241,18 @@ while k < options.SUR.max_eval_per_stage
         (u_target, yp_sample.mean, yp_sample.std);
     p_misclass = min (p_excess, q_excess);
     Pf_target_estim = mean(p_excess ./ gx) * Pf_base;
-    fprintf ('>>> Pf_target_estim = %.3e\n', Pf_target_estim);
+    if options.verbose
+        fprintf ('>>> Pf_target_estim = %.3e\n', Pf_target_estim);
+    end
 
     % Current estimate of the proba of exceeding u_final
     %  (u_final is the final target level)
     [~, ggg_final] = stk_distrib_normal_cdf ...
         (problem.u_final, yp_sample.mean, yp_sample.std);
     Pf_final_estim = (mean (ggg_final ./ gx)) * Pf_base;
-    fprintf ('>>> (Pf_final_estim = %.3e)\n', Pf_final_estim);
+    if options.verbose
+        fprintf ('>>> (Pf_final_estim = %.3e)\n', Pf_final_estim);
+    end
 
     % ERROR ESTIMATES FOR THE TARGET THRESHOLD %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -252,12 +265,16 @@ while k < options.SUR.max_eval_per_stage
 
     % Squared coefficient of variation for alphaBSS_t
     squaredCoV = squaredCoV_incr + (1 + squaredCoV_incr) * squaredCoV_prev;
-    fprintf ('>>> Estimated CoV = %.2f%%\n', sqrt (squaredCoV) * 100);
+    if options.verbose
+        fprintf ('>>> Estimated CoV = %.2f%%\n', sqrt (squaredCoV) * 100);
+    end
 
     integratedPMisclass = Pf_base * (mean (p_misclass ./ gx));
     relativeIntegratedPMisclass = integratedPMisclass / Pf_target_estim;
-    fprintf ('>>> Relative integrated PMisclass (RIPM) = %.2f%%\n', ...
-        relativeIntegratedPMisclass * 100);
+    if options.verbose
+        fprintf ('>>> Relative integrated PMisclass (RIPM) = %.2f%%\n', ...
+            relativeIntegratedPMisclass * 100);
+    end
 
     % STOPPING CRITERION %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -328,39 +345,47 @@ while k < options.SUR.max_eval_per_stage
     % DECIDE IF WE KEEP ADDING POINTS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
     % Forced stopping if we cannot compute the SUR criterion
-    fprintf ('>>> SUR stop_flag = %d  ', stop_flag);
     b0 = (stop_flag > 0);
-    if b0
-        fprintf (' [MUST STOP]\n');
-    else
-        fprintf (' [CAN CONTINUE]\n');
+    if options.verbose
+        fprintf ('>>> SUR stop_flag = %d  ', stop_flag);
+        if b0
+            fprintf (' [MUST STOP]\n');
+        else
+            fprintf (' [CAN CONTINUE]\n');
+        end
     end
 
     % First stopping condition: RIPM must be low enough
-    fprintf ('>>> stopping_crit(RIPM)=%.2f%%  ', stopping_crit * 100);
     b1 = (stopping_crit <= stopping_thresh);
-    if b1
-        fprintf ('<=  stopping_thresh=%.2f%%  [STOP ALLOWED]\n', stopping_thresh * 100);
-    else
-        fprintf ('>  stopping_thresh=%.2f%%  [MUST CONTINUE]\n', stopping_thresh * 100);
+    if options.verbose
+        fprintf ('>>> stopping_crit(RIPM)=%.2f%%  ', stopping_crit * 100);
+        if b1
+            fprintf ('<=  stopping_thresh=%.2f%%  [STOP ALLOWED]\n', stopping_thresh * 100);
+        else
+            fprintf ('>  stopping_thresh=%.2f%%  [MUST CONTINUE]\n', stopping_thresh * 100);
+        end
     end
 
     % Second stopping condition: k >= k_min
     k_min = options.SUR.min_eval_per_stage;
     b2 = (k >= k_min);
-    if b2
-        fprintf ('>>> k=%d >= k_min=%d  [STOP ALLOWED]\n', k, k_min);
-    else
-        fprintf ('>>> k=%d < k_min=%d [MUST CONTINUE]\n', k, k_min);
+    if options.verbose
+        if b2
+            fprintf ('>>> k=%d >= k_min=%d  [STOP ALLOWED]\n', k, k_min);
+        else
+            fprintf ('>>> k=%d < k_min=%d [MUST CONTINUE]\n', k, k_min);
+        end
     end
 
     if b0 || (b1 && b2)
-        fprintf ('>>>   --> all stopping condition are satisfied,\n');
-        fprintf ('>>>   --> stop adding evaluation points.\n');
-        fprintf ('SUR phase completed ');
-        fprintf ('(%d points have been evaluated)\n', k);
+        if options.verbose
+            fprintf ('>>>   --> all stopping condition are satisfied,\n');
+            fprintf ('>>>   --> stop adding evaluation points.\n');
+            fprintf ('SUR phase completed ');
+            fprintf ('(%d points have been evaluated)\n', k);
+        end
         break;
-    else
+    elseif options.verbose
         fprintf ('>>>   --> at least one stopping condition is not satisfied,\n');
         fprintf ('>>>   --> pick a new evaluation point\n');
     end
@@ -416,8 +441,10 @@ while k < options.SUR.max_eval_per_stage
 
     k = k + 1;
 
-    fprintf ('>>> nb_evals = %d ', nb_evals);
-    fprintf ('(stage=%d, k=%d)\n\n', stage, k);
+    if options.verbose
+        fprintf ('>>> nb_evals = %d ', nb_evals);
+        fprintf ('(stage=%d, k=%d)\n\n', stage, k);
+    end
 
 end % while (k <= options.SUR.max_eval_per_stage)
 
@@ -441,29 +468,38 @@ end
 
 % Update the threshold %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-fprintf ('\n[[stage %d, updating threshold]]\n', stage);
+if options.verbose
+    fprintf ('\n[[stage %d, updating threshold]]\n', stage);
+end
 
 % target threshold
 if ~ final_stage % update if we're not at the final stage
-    fprintf (['>>> The current threshold (stage %d) has been ' ...
-        'updated.\n'], stage);
-    fprintf (['>>> === SUR was ran using the temporary threshold' ...
-        '%.3f.\n'], u_target);
+    if options.verbose
+        fprintf (['>>> The current threshold (stage %d) has been ' ...
+            'updated.\n'], stage);
+        fprintf (['>>> === SUR was ran using the temporary threshold' ...
+            '%.3f.\n'], u_target);
+    end
 
     [u_target, g_next] = bss_select_next_threshold ...
-        (yp_sample, gx, options.p0, u_target, problem.u_final);
+        (yp_sample, gx, options.p0, u_target, problem.u_final, ...
+        options.verbose);
 
     final_stage = (u_target == problem.u_final);
 
-    fprintf (['>>> === The next sample will be simulated using the ' ...
-        'updated threshold u_target = %.3f.\n'], u_target);
+    if options.verbose
+        fprintf (['>>> === The next sample will be simulated using the ' ...
+            'updated threshold u_target = %.3f.\n'], u_target);
+    end
 end
 
 stage_data(stage).u_target = u_target;
 
 % update Pf estimate %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-fprintf('\n[[stage %d, updating Pf estimate...]]\n', stage);
+if options.verbose
+    fprintf('\n[[stage %d, updating Pf estimate...]]\n', stage);
+end
 
 % the estimate the product of all stagewise estimated ratios
 if final_stage
@@ -474,8 +510,10 @@ end
 estim_ratio = mean(ggg ./ gx);
 Pf_target = Pf_base * estim_ratio;
 
-fprintf('>>> estim_ratio = %.5f\n', estim_ratio);
-fprintf('>>> Pf_target = %.5e\n', Pf_target);
+if options.verbose
+    fprintf('>>> estim_ratio = %.5f\n', estim_ratio);
+    fprintf('>>> Pf_target = %.5e\n', Pf_target);
+end
 
 % save stage results
 stage_data(stage).estim_ratio = estim_ratio;
@@ -488,7 +526,9 @@ if final_stage, return; end
 
 % SMC: generate a new MC sample %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-fprintf('\n[[stage %d, simulating a new sample]]\n', stage);
+if options.verbose
+    fprintf('\n[[stage %d, simulating a new sample]]\n', stage);
+end
 
 g_next = g_fun(u_target, yp_sample.mean, yp_sample.std);
 
@@ -499,10 +539,12 @@ xt_1 = replicate_particles (xt, nb_replicates);
 [mcs, accept_rate, sig_RW] = bss_move ...
     (xt_1, obs, model, u_target, options, problem, sig_RW);
 
-fprintf('>>> expected acceptance rates:  ');
-fprintf('%.2f%%  ', accept_rate.expected * 100); fprintf('\n');
-fprintf('>>> observed acceptance rates:  ');
-fprintf('%.2f%%  ', accept_rate.observed * 100); fprintf('\n');
+if options.verbose
+    fprintf('>>> expected acceptance rates:  ');
+    fprintf('%.2f%%  ', accept_rate.expected * 100); fprintf('\n');
+    fprintf('>>> observed acceptance rates:  ');
+    fprintf('%.2f%%  ', accept_rate.observed * 100); fprintf('\n');
+end
 
 stage_data(stage).accept_rate = accept_rate;
 stage_data(stage).sig_RW = sig_RW;

@@ -27,19 +27,25 @@
 %    License along with BSS;  if not, see <http://www.gnu.org/licenses/>.
 
 function [u_target, g_next] = bss_select_next_threshold ...
-    (yp_sample, gx, p0, u_target, u_final)
+    (yp_sample, gx, p0, u_target, u_final, verbose)
+
+if nargin < 6
+    verbose = true;
+end
 
 % update target threshold
 [u_target, g_next] = bss_threshold_dichotomy_ ...
     (yp_sample.mean, yp_sample.std, gx, p0, u_target, u_final);
 
-fprintf ('>>> updated target threshold: u_target = %.3f\n', u_target);
+if verbose
+    fprintf ('>>> updated target threshold: u_target = %.3f\n', u_target);
 
-% variance monitoring
-cv1 = std (g_next ./ gx);
-cv2 = std ((yp_sample > u_target) ./ gx);
+    % variance monitoring
+    cv1 = std (g_next ./ gx);
+    cv2 = std ((yp_sample > u_target) ./ gx);
 
-fprintf ('>>> cv1=%f, cv2=%f\n', cv1, cv2);
+    fprintf ('>>> cv1=%f, cv2=%f\n', cv1, cv2);
+end
 
 end
 
