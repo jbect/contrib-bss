@@ -218,18 +218,17 @@ while k < options.SUR.max_eval_per_stage
     stage_history.u_target(end+1) = u_target;
     stage_history.u_final(end+1)  = problem.u_final;
 
-    if final_stage
-        if options.verbose
+    if options.verbose
+        if final_stage
             fprintf('>>> final stage !  ==>  ');
             fprintf('u_target is now locked to u_final = %.3f.\n', u_target);
-        end
-    else
-        if options.verbose
+        else
             fprintf('>>> u_target = %.3f', u_target);
             fprintf('  <  u_final = %.3f\n', problem.u_final);
         end
-        assert(u_target < problem.u_final);
     end
+
+    assert (final_stage || (u_target < problem.u_final));
 
     % THRESHOLD EXCEEDANCE PROBABILITIES %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
