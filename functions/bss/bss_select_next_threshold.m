@@ -43,15 +43,13 @@ if verbose
     % variance monitoring
     cv1 = std (g_next ./ gx);
     cv2 = std ((yp_sample > u_target) ./ gx);
-
     fprintf ('>>> cv1=%f, cv2=%f\n', cv1, cv2);
 end
 
-end
+end % function bss_select_next_threshold
 
 
-
-function [uu_median, g_next] = bss_threshold_dichotomy_...
+function [uu_median, g_next] = bss_threshold_dichotomy_ ...
     (ya, ystd, g_curr, p0, propu, u_final)
 
 theta = 1e-9;
@@ -125,4 +123,4 @@ while (prop_u - prop_l) > theta
     end
 end
 
-end % function
+end % function bss_threshold_dichotomy_

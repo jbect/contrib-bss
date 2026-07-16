@@ -137,9 +137,7 @@ while ~ final_stage
 
 end
 
-end % function bss %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
+end % function bss
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -406,7 +404,7 @@ while k < options.SUR.max_eval_per_stage
 
     obs = struct('xi', xi, 'yi', yi);
 
-    % youplaboum, we have one more evaluation in store
+    % We have one more evaluation in store
     nb_evals = size(xi, 1);
     assert(isequal(size(xi), [nb_evals problem.dim]));
     assert(isequal(size(yi), [nb_evals 1]));
@@ -482,8 +480,7 @@ if ~ final_stage % update if we're not at the final stage
     end
 
     [u_target, g_next] = bss_select_next_threshold ...
-        (yp_sample, gx, options.p0, u_target, problem.u_final, ...
-        options.verbose);
+        (yp_sample, gx, options.p0, u_target, problem.u_final, options.verbose);
 
     final_stage = (u_target == problem.u_final);
 
@@ -551,6 +548,6 @@ stage_data(stage).sig_RW = sig_RW;
 
 mcs.yt = feval(problem.cost_fun, mcs.xt); % CHEATING
 
-end % function
+end % function bss_stage
 
 %#ok<*AGROW>

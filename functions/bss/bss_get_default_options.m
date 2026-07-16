@@ -185,4 +185,4 @@ if (~ isfield (sur, 'max_eval_per_stage')) ...
     sur.max_eval_per_stage = 100;
 end
 
-end % function
+end % function get_default_SUR_options
